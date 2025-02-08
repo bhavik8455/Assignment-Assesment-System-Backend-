@@ -1,0 +1,141 @@
+I'll explain the database schema and how data flows through the tables in a logical order.
+
+1. **USERS Table** (Parent table for both students and teachers)
+- This is where all users are first registered
+- Contains basic information like email, password, name, contact
+- The `role` field determines if they're a 'student' or 'teacher'
+- Example:
+```sql
+INSERT INTO users (email, password_hash, full_name, contact_number, role) 
+VALUES ('john.doe@student.edu', 'hashed_pwd', 'John Doe', '+1234567890', 'student');
+```
+
+2. **STUDENTS Table**
+- Created after a user with role 'student' is inserted
+- References users table via `user_id`
+- Contains academic details like roll number, PID, semester, year
+- Example:
+```sql
+INSERT INTO students (user_id, roll_number, pid, current_semester, current_year, division, academic_year) 
+VALUES (1, '101', 'PID001', 6, 'TE', 'B', '2024-2025');
+```
+
+3. **TEACHERS Table**
+- Created after a user with role 'teacher' is inserted
+- References users table via `user_id`
+- Contains department information
+- Example:
+```sql
+INSERT INTO teachers (user_id, department) 
+VALUES (2, 'Computer Science');
+```
+
+4. **SUBJECTS Table**
+- Independent table containing all subject details
+- Not linked to any specific year/semester until assigned
+- Example:
+```sql
+INSERT INTO subjects (subject_code, subject_name, semester, year) 
+VALUES ('CSS101', 'Cryptography and System Security', 6, 'TE');
+```
+
+5. **TEACHER_SUBJECTS Table** (Links teachers to subjects)
+- Maps which teacher teaches what subject to which division
+- Forms many-to-many relationship between teachers and subjects
+- Example:
+```sql
+INSERT INTO teacher_subjects (teacher_id, subject_id, division, academic_year) 
+VALUES (1, 1, 'B', '2024-2025');
+```
+
+6. **TASKS Table**
+- Created by teachers for their subjects
+- References teacher_subjects via `teacher_subject_id`
+- Contains assignment details like type (ISE1/ISE2/MSE), due date
+- Example:
+```sql
+INSERT INTO tasks (teacher_subject_id, task_type, title, due_date, total_marks) 
+VALUES (1, 'ISE1', 'CSS Mid-Term Assignment', '2024-03-15', 20);
+```
+
+7. **SUBMISSIONS Table**
+- Created when students submit assignments
+- Links students to tasks
+- Contains submission file path and status
+- Example:
+```sql
+INSERT INTO submissions (task_id, student_id, submission_file_path, status) 
+VALUES (1, 1, '/uploads/CSS_ISE1_PID001.pdf', 'submitted');
+```
+
+8. **MARKS Table**
+- Created when teachers grade submissions
+- References submissions via `submission_id`
+- Contains question-wise marks and comments
+- Example:
+```sql
+INSERT INTO marks (submission_id, question_number, marks_obtained, comments, marked_by) 
+VALUES (1, 1, 8.5, 'Good understanding', 1);
+```
+
+Data Flow Example:
+1. Create a user (teacher):
+```sql
+INSERT INTO users VALUES ('smith@college.edu', 'hash', 'John Smith', '1234', 'teacher');
+```
+
+2. Create teacher profile:
+```sql
+INSERT INTO teachers VALUES (LAST_INSERT_ID(), 'Computer Science');
+```
+
+3. Assign subject to teacher:
+```sql
+INSERT INTO teacher_subjects VALUES (
+    LAST_INSERT_ID(), -- teacher_id
+    1, -- subject_id for CSS
+    'B', -- division
+    '2024-2025' -- academic_year
+);
+```
+
+4. Teacher creates assignment:
+```sql
+INSERT INTO tasks VALUES (
+    LAST_INSERT_ID(), -- teacher_subject_id
+    'ISE1',
+    'Cryptography Assignment 1',
+    '2024-03-15',
+    20
+);
+```
+
+5. Student submits assignment:
+```sql
+INSERT INTO submissions VALUES (
+    LAST_INSERT_ID(), -- task_id
+    1, -- student_id
+    '/path/to/file.pdf',
+    'submitted'
+);
+```
+
+6. Teacher grades submission:
+```sql
+INSERT INTO marks VALUES (
+    LAST_INSERT_ID(), -- submission_id
+    1, -- question_number
+    18.5, -- marks
+    'Excellent work',
+    1 -- teacher_id
+);
+```
+
+Key Points:
+1. The USERS table is the parent table for both STUDENTS and TEACHERS
+2. TEACHER_SUBJECTS creates the many-to-many relationship between teachers and subjects
+3. TASKS are linked to specific teacher-subject combinations
+4. SUBMISSIONS link students to specific tasks
+5. MARKS are linked to specific submissions and can be question-wise
+
+Would you like me to explain any specific relationship or data flow in more detail?
